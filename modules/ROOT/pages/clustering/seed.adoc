@@ -22,14 +22,12 @@ The process for seeding a cluster is essentially the same for clusters with Sing
 However, using a designated seeder is only applicable to clusters with Core instances.
 The seeding is usually performed on primary instances only but it is possible to seed a Read Replica instance, yet it is not necessary unless for performance reasons.
 
-
 [[causal-clustering-seed-from-dump]]
 == Seed a cluster from a database dump (offline)
 
 This could be an offline backup (i.e. a dump) from a standalone Neo4j instance or a cluster member (e.g., an existing Read Replica instance).
 The following example seeds a newly created cluster with an example DBMS consisting of the `system` database and the default database, `neo4j` from a dump.
 If you want to seed a single user database, follow the steps in <<causal-clustering-seed-from-backups>> further on.
-
 
 [TIP]
 ====
@@ -48,7 +46,7 @@ Moving files and directories manually in or out of a Neo4j installation is not r
 The examples assume that you are restoring one user database with the default name of `neo4j` and the `system` database, containing the replicated configuration state.
 Modify the command line arguments to match your exact setup.
 +
-[source, shell]
+[source,shell]
 ----
 neo4j-01$ ./bin/neo4j-admin load --from=/path/to/system.dump --database=system
 neo4j-01$ ./bin/neo4j-admin load --from=/path/to/neo4j.dump --database=neo4j
@@ -60,7 +58,7 @@ neo4j-03$ ./bin/neo4j-admin load --from=/path/to/neo4j.dump --database=neo4j
 +
 . Start each cluster member.
 +
-[source, shell]
+[source,shell]
 ----
 neo4j-01$ ./bin/neo4j start
 neo4j-02$ ./bin/neo4j start
@@ -68,6 +66,12 @@ neo4j-03$ ./bin/neo4j start
 ----
 +
 The cluster forms and the replicated Neo4j DBMS deployment comes online.
+
+[NOTE]
+====
+The system database defines the databases that should exist in your neo4j instance.
+If a database doesn't exist in your system database (because it hasn't been created previously) it will have to be created with `CREATE DATABASE <database-name>` even if it has been restored/loaded/imported.
+====
 
 [[causal-clustering-seed-from-backups]]
 == Seed a cluster from a database backup (online)
@@ -99,7 +103,7 @@ This example uses a user database called `movies1`.
 Use the `system` database to connect.
 The command is automatically routed to the appropriate Core instance and from there to the other cluster members.
 +
-[source, cypher, role=noplay]
+[source,cypher,role=noplay]
 ----
 DROP DATABASE movies1;
 ----
@@ -118,7 +122,7 @@ See xref:clustering/seed.adoc#causal-clustering-seed-from-dump[Seed a cluster fr
 ====
 . Restore the database on each Core member in the cluster.
 +
-[source, shell]
+[source,shell]
 ----
 neo4j@core1$ ./bin/neo4j-admin restore --from=/path/to/movies1-backup-dir --database=movies1
 neo4j@core2$ ./bin/neo4j-admin restore --from=/path/to/movies1-backup-dir --database=movies1
@@ -129,7 +133,7 @@ However, restoring a database does not automatically create it.
 . On one of the Core instances, run `CREATE DATABASE movies1` against the `system` database to create the `movies1` database.
 The command is automatically routed to the appropriate Core instance and from there to the other cluster members.
 +
-[source, cypher, role=noplay]
+[source,cypher,role=noplay]
 ----
 CREATE DATABASE movies1;
 ----
@@ -141,7 +145,7 @@ ready to start consuming query after 701 ms, results consumed after another 0 ms
 ----
 . Verify that the `movies1` database is online on all members.
 +
-[source, cypher, role=noplay]
+[source,cypher,role=noplay]
 ----
 SHOW DATABASES;
 ----
@@ -179,14 +183,14 @@ If a database with the same name as your backup already exists in your cluster, 
 . Restore the `movies1` database on one of the Core instances.
 In this example, the `core1` member is used.
 +
-[source, shell]
+[source,shell]
 ----
 neo4j@core1$ ./bin/neo4j-admin restore --from=/path/to/movies1-backup-dir --database=movies1
 ----
 . Find the server ID of `core1` by logging in to Cypher Shell and running `dbms.cluster.overview()`.
 Use any database to connect.
 +
-[source, cypher, role=noplay]
+[source,cypher,role=noplay]
 ----
 CALL dbms.cluster.overview();
 ----
@@ -205,7 +209,7 @@ CALL dbms.cluster.overview();
 The command is automatically routed to the appropriate Core instance and from there to the other cluster members.
 If the `movies1` database is of considerable size, the execution of the command can take some time.
 +
-[source, cypher, role=noplay]
+[source,cypher,role=noplay]
 ----
 CREATE DATABASE movies1 OPTIONS {existingData: 'use', existingDataSeedInstance: '8e07406b-90b3-4311-a63f-85c45af63583'};
 ----
@@ -217,7 +221,7 @@ ready to start consuming query after 701 ms, results consumed after another 0 ms
 ----
 . Verify that the `movies1` database is online on all cluster members.
 +
-[source, cypher, role=noplay]
+[source,cypher,role=noplay]
 ----
 SHOW DATABASES;
 ----
